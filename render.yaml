@@ -1,0 +1,13 @@
+services:
+  - type: worker
+    name: rajfflive-bot-dc
+    runtime: python
+    buildCommand: "bash build.sh"
+    startCommand: "python main.py"
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: COMMAND_PREFIX
+        value: "!"
