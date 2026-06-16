@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from database import get_conn
 import asyncio
+import datetime
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -34,7 +35,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(moderate_members=True)
     async def mute(self, ctx, member: discord.Member, duration: int = 10, *, reason="No reason provided"):
         """Mute a member for [duration] minutes (default 10)."""
-        until = discord.utils.utcnow() + discord.timedelta(minutes=duration)
+        until = discord.utils.utcnow() + datetime.timedelta(minutes=duration)
         await member.timeout(until, reason=reason)
         await ctx.send(f"🔇 **{member}** muted for {duration} minute(s). Reason: {reason}")
 
@@ -47,7 +48,6 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def purge(self, ctx, amount: int):
-        """Delete [amount] messages from the channel."""
         await ctx.channel.purge(limit=amount + 1)
         msg = await ctx.send(f"🧹 Deleted {amount} messages.")
         await asyncio.sleep(3)
