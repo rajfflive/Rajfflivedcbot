@@ -2,6 +2,13 @@ import discord
 from discord.ext import commands
 from openai import OpenAI
 import config
+import time
+
+MODELS = [
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "google/gemma-3-4b-it:free",
+    "mistralai/mistral-7b-instruct:free",
+]
 
 class AI(commands.Cog):
     def __init__(self, bot):
@@ -17,17 +24,27 @@ class AI(commands.Cog):
             self.conversations[user_id] = []
         self.conversations[user_id].append({"role": "user", "content": user_message})
         history = self.conversations[user_id][-10:]
-        response = self.client.chat.completions.create(
-            model="meta-llama/llama-3.2-3b-instruct:free",
-            messages=[
-                {"role": "system", "content": "You are a helpful and friendly Discord bot assistant. Keep responses concise and suitable for chat."},
-                *history
-            ],
-            max_tokens=1024
-        )
-        reply = response.choices[0].message.content
-        self.conversations[user_id].append({"role": "assistant", "content": reply})
-        return reply
+
+        last_error = None
+        for model in MODELS:
+            try:
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful and friendly Discord bot assistant. Keep responses concise and suitable for chat."},
+                        *history
+                    ],
+                    max_tokens=1024
+                )
+                reply = response.choices[0].message.content
+                self.conversations[user_id].append({"role": "assistant", "content": reply})
+                return reply
+            except Exception as e:
+                last_error = e
+                time.sleep(1)
+                continue
+
+        raise last_error
 
     @commands.command(name="ask")
     async def ask(self, ctx, *, question: str):
