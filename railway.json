@@ -5,13 +5,17 @@
     "nixpacksPlan": {
       "phases": {
         "setup": {
-          "nixPkgs": ["ffmpeg", "python313"]
+          "nixPkgs": ["ffmpeg", "python313", "python313Packages.pip"]
+        },
+        "install": {
+          "cmds": ["python3.13 -m pip install -r requirements.txt"]
         }
       }
     }
   },
   "deploy": {
-    "startCommand": "python main.py",
-    "restartPolicyType": "ON_FAILURE"
+    "startCommand": "python3.13 main.py",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
   }
 }
