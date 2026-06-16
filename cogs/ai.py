@@ -1,21 +1,24 @@
 import discord
 from discord.ext import commands
-from groq import Groq
+from openai import OpenAI
 import config
 
 class AI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.client = Groq(api_key=config.GROQ_API_KEY)
+        self.client = OpenAI(
+            api_key=config.OPENROUTER_API_KEY,
+            base_url="https://openrouter.ai/api/v1"
+        )
         self.conversations = {}
 
-    def ask_groq_sync(self, user_id: int, user_message: str) -> str:
+    def ask_ai_sync(self, user_id: int, user_message: str) -> str:
         if user_id not in self.conversations:
             self.conversations[user_id] = []
         self.conversations[user_id].append({"role": "user", "content": user_message})
         history = self.conversations[user_id][-10:]
         response = self.client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="mistralai/mistral-7b-instruct:free",
             messages=[
                 {"role": "system", "content": "You are a helpful and friendly Discord bot assistant. Keep responses concise and suitable for chat."},
                 *history
@@ -31,7 +34,7 @@ class AI(commands.Cog):
         async with ctx.typing():
             try:
                 reply = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ask_groq_sync(ctx.author.id, question)
+                    None, lambda: self.ask_ai_sync(ctx.author.id, question)
                 )
                 if len(reply) > 2000:
                     for chunk in [reply[i:i+1990] for i in range(0, len(reply), 1990)]:
@@ -46,7 +49,7 @@ class AI(commands.Cog):
         async with ctx.typing():
             try:
                 reply = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ask_groq_sync(ctx.author.id, message)
+                    None, lambda: self.ask_ai_sync(ctx.author.id, message)
                 )
                 if len(reply) > 2000:
                     for chunk in [reply[i:i+1990] for i in range(0, len(reply), 1990)]:
@@ -72,7 +75,7 @@ class AI(commands.Cog):
             async with message.channel.typing():
                 try:
                     reply = await self.bot.loop.run_in_executor(
-                        None, lambda: self.ask_groq_sync(message.author.id, content)
+                        None, lambda: self.ask_ai_sync(message.author.id, content)
                     )
                     await message.channel.send(reply)
                 except Exception as e:
