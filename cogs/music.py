@@ -11,7 +11,7 @@ YTDL_OPTIONS = {
     "format": "bestaudio/best",
     "noplaylist": True,
     "quiet": True,
-    "default_search": "ytsearch",
+    "default_search": "ytsearch1",
     "source_address": "0.0.0.0",
     "extractor_args": {
         "youtube": {
@@ -94,18 +94,29 @@ class MusicCog(commands.Cog):
             if not ctx.author.voice:
                 return await ctx.send("❌ Join a voice channel first!")
             await ctx.author.voice.channel.connect()
+
         async with ctx.typing():
             loop = asyncio.get_event_loop()
             try:
-                data = await loop.run_in_executor(None, lambda: ytdl.extract_info(f"ytsearch:{query}", download=False))
+                is_url = query.startswith("http://") or query.startswith("https://")
+                search = query if is_url else f"ytsearch1:{query}"
+                data = await loop.run_in_executor(
+                    None, lambda: ytdl.extract_info(search, download=False)
+                )
             except Exception as e:
                 return await ctx.send(f"❌ Search failed: {e}")
-            entries = data.get("entries", [])
-            if not entries:
-                return await ctx.send("❌ No results found. Try a different song name.")
-            entry = entries[0]
+
+            if "entries" in data:
+                entries = [e for e in data["entries"] if e]
+                if not entries:
+                    return await ctx.send("❌ No results found. Try a different song name.")
+                entry = entries[0]
+            else:
+                entry = data
+
             url = entry.get("webpage_url") or entry.get("url")
             title = entry.get("title", query)
+
         if ctx.voice_client.is_playing():
             self.get_queue(ctx.guild.id).append((url, title))
             await ctx.send(f"📋 Added to queue: **{title}**")
