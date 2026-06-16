@@ -2,7 +2,10 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
+import shutil
 from collections import deque
+
+FFMPEG_PATH = shutil.which("ffmpeg") or "/usr/local/bin/ffmpeg"
 
 YTDL_OPTIONS = {
     "format": "bestaudio/best",
@@ -22,7 +25,7 @@ ytdl = yt_dlp.YoutubeDL(YTDL_OPTIONS)
 class MusicCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.queues = {}  # guild_id -> deque of (url, title)
+        self.queues = {}
 
     def get_queue(self, guild_id):
         if guild_id not in self.queues:
@@ -42,7 +45,7 @@ class MusicCog(commands.Cog):
         loop = asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
         stream_url = data["url"]
-        source = discord.FFmpegPCMAudio(stream_url, **FFMPEG_OPTIONS)
+        source = discord.FFmpegPCMAudio(stream_url, executable=FFMPEG_PATH, **FFMPEG_OPTIONS)
         source = discord.PCMVolumeTransformer(source, volume=0.5)
 
         def after(error):
