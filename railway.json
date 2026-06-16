@@ -8,7 +8,10 @@
           "nixPkgs": ["ffmpeg", "python313", "python313Packages.pip"]
         },
         "install": {
-          "cmds": ["python3.13 -m pip install -r requirements.txt"]
+          "cmds": [
+            "ln -sf $(which ffmpeg) /usr/local/bin/ffmpeg || true",
+            "python3.13 -m pip install -r requirements.txt"
+          ]
         }
       }
     }
