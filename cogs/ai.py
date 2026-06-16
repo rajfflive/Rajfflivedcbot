@@ -18,7 +18,7 @@ class AI(commands.Cog):
         self.conversations[user_id].append({"role": "user", "content": user_message})
         history = self.conversations[user_id][-10:]
         response = self.client.chat.completions.create(
-            model="mistralai/mistral-7b-instruct:free",
+            model="meta-llama/llama-3.2-3b-instruct:free",
             messages=[
                 {"role": "system", "content": "You are a helpful and friendly Discord bot assistant. Keep responses concise and suitable for chat."},
                 *history
