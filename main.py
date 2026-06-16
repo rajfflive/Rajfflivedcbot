@@ -9,7 +9,16 @@ intents.members = True
 
 bot = commands.Bot(command_prefix=config.COMMAND_PREFIX, intents=intents)
 
-COGS = ["cogs.moderation", "cogs.music", "cogs.fun", "cogs.custom_commands", "cogs.ai"]
+COGS = [
+    "cogs.moderation",
+    "cogs.music",
+    "cogs.fun",
+    "cogs.custom_commands",
+    "cogs.ai",
+    "cogs.games",
+    "cogs.download",
+    "cogs.help",
+]
 
 @bot.event
 async def on_ready():
