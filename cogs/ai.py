@@ -5,9 +5,9 @@ import config
 import time
 
 MODELS = [
-    "meta-llama/llama-3.2-3b-instruct:free",
     "google/gemma-3-4b-it:free",
-    "mistralai/mistral-7b-instruct:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "deepseek/deepseek-r1-0528:free",
 ]
 
 class AI(commands.Cog):
@@ -24,7 +24,6 @@ class AI(commands.Cog):
             self.conversations[user_id] = []
         self.conversations[user_id].append({"role": "user", "content": user_message})
         history = self.conversations[user_id][-10:]
-
         last_error = None
         for model in MODELS:
             try:
@@ -43,16 +42,13 @@ class AI(commands.Cog):
                 last_error = e
                 time.sleep(1)
                 continue
-
         raise last_error
 
     @commands.command(name="ask")
     async def ask(self, ctx, *, question: str):
         async with ctx.typing():
             try:
-                reply = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ask_ai_sync(ctx.author.id, question)
-                )
+                reply = await self.bot.loop.run_in_executor(None, lambda: self.ask_ai_sync(ctx.author.id, question))
                 if len(reply) > 2000:
                     for chunk in [reply[i:i+1990] for i in range(0, len(reply), 1990)]:
                         await ctx.send(chunk)
@@ -65,9 +61,7 @@ class AI(commands.Cog):
     async def chat(self, ctx, *, message: str):
         async with ctx.typing():
             try:
-                reply = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ask_ai_sync(ctx.author.id, message)
-                )
+                reply = await self.bot.loop.run_in_executor(None, lambda: self.ask_ai_sync(ctx.author.id, message))
                 if len(reply) > 2000:
                     for chunk in [reply[i:i+1990] for i in range(0, len(reply), 1990)]:
                         await ctx.send(chunk)
@@ -91,9 +85,7 @@ class AI(commands.Cog):
                 return await message.channel.send("Hey! Use `!ask <question>` or mention me with a question.")
             async with message.channel.typing():
                 try:
-                    reply = await self.bot.loop.run_in_executor(
-                        None, lambda: self.ask_ai_sync(message.author.id, content)
-                    )
+                    reply = await self.bot.loop.run_in_executor(None, lambda: self.ask_ai_sync(message.author.id, content))
                     await message.channel.send(reply)
                 except Exception as e:
                     await message.channel.send(f"❌ Error: {e}")
