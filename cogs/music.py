@@ -52,8 +52,22 @@ class MusicCog(commands.Cog):
     async def _stream(self, ctx, url, title):
         vc = ctx.voice_client
         loop = asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
-        stream_url = data["url"]
+        try:
+            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+        except Exception as e:
+            return await ctx.send(f"❌ Could not load audio: {e}")
+
+        if "formats" in data:
+            stream_url = next(
+                (f["url"] for f in data["formats"] if f.get("acodec") != "none"),
+                data.get("url")
+            )
+        else:
+            stream_url = data.get("url")
+
+        if not stream_url:
+            return await ctx.send("❌ Could not get stream URL. Try another song.")
+
         source = discord.FFmpegPCMAudio(stream_url, executable=FFMPEG_PATH, **FFMPEG_OPTIONS)
         source = discord.PCMVolumeTransformer(source, volume=0.5)
 
@@ -80,15 +94,18 @@ class MusicCog(commands.Cog):
             if not ctx.author.voice:
                 return await ctx.send("❌ Join a voice channel first!")
             await ctx.author.voice.channel.connect()
-
         async with ctx.typing():
             loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(f"ytsearch:{query}", download=False))
-            if "entries" in data:
-                data = data["entries"][0]
-            url = data["webpage_url"]
-            title = data.get("title", query)
-
+            try:
+                data = await loop.run_in_executor(None, lambda: ytdl.extract_info(f"ytsearch:{query}", download=False))
+            except Exception as e:
+                return await ctx.send(f"❌ Search failed: {e}")
+            entries = data.get("entries", [])
+            if not entries:
+                return await ctx.send("❌ No results found. Try a different song name.")
+            entry = entries[0]
+            url = entry.get("webpage_url") or entry.get("url")
+            title = entry.get("title", query)
         if ctx.voice_client.is_playing():
             self.get_queue(ctx.guild.id).append((url, title))
             await ctx.send(f"📋 Added to queue: **{title}**")
