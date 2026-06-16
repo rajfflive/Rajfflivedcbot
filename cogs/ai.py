@@ -1,26 +1,28 @@
 import discord
 from discord.ext import commands
-import anthropic
+from groq import Groq
 import config
 
 class AI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+        self.client = Groq(api_key=config.GROQ_API_KEY)
         self.conversations = {}
 
-    def ask_claude_sync(self, user_id: int, user_message: str) -> str:
+    def ask_groq_sync(self, user_id: int, user_message: str) -> str:
         if user_id not in self.conversations:
             self.conversations[user_id] = []
         self.conversations[user_id].append({"role": "user", "content": user_message})
         history = self.conversations[user_id][-10:]
-        response = self.client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            system="You are a helpful and friendly Discord bot assistant. Keep responses concise and suitable for chat.",
-            messages=history
+        response = self.client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=[
+                {"role": "system", "content": "You are a helpful and friendly Discord bot assistant. Keep responses concise and suitable for chat."},
+                *history
+            ],
+            max_tokens=1024
         )
-        reply = response.content[0].text
+        reply = response.choices[0].message.content
         self.conversations[user_id].append({"role": "assistant", "content": reply})
         return reply
 
@@ -29,7 +31,7 @@ class AI(commands.Cog):
         async with ctx.typing():
             try:
                 reply = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ask_claude_sync(ctx.author.id, question)
+                    None, lambda: self.ask_groq_sync(ctx.author.id, question)
                 )
                 if len(reply) > 2000:
                     for chunk in [reply[i:i+1990] for i in range(0, len(reply), 1990)]:
@@ -44,7 +46,7 @@ class AI(commands.Cog):
         async with ctx.typing():
             try:
                 reply = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ask_claude_sync(ctx.author.id, message)
+                    None, lambda: self.ask_groq_sync(ctx.author.id, message)
                 )
                 if len(reply) > 2000:
                     for chunk in [reply[i:i+1990] for i in range(0, len(reply), 1990)]:
@@ -70,7 +72,7 @@ class AI(commands.Cog):
             async with message.channel.typing():
                 try:
                     reply = await self.bot.loop.run_in_executor(
-                        None, lambda: self.ask_claude_sync(message.author.id, content)
+                        None, lambda: self.ask_groq_sync(message.author.id, content)
                     )
                     await message.channel.send(reply)
                 except Exception as e:
