@@ -13,6 +13,15 @@ YTDL_OPTIONS = {
     "quiet": True,
     "default_search": "ytsearch",
     "source_address": "0.0.0.0",
+    "extractor_args": {
+        "youtube": {
+            "player_client": ["android"],
+            "player_skip": ["webpage"]
+        }
+    },
+    "http_headers": {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 Chrome/90.0.4430.91 Mobile Safari/537.36"
+    },
 }
 
 FFMPEG_OPTIONS = {
